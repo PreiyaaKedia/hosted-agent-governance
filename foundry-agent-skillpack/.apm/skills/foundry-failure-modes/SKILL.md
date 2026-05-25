@@ -19,6 +19,7 @@ description: 25 verified failure modes with symptom-to-fix lookup for Foundry ho
 | Stream cuts silently | LLM serialization bottleneck | Inter-tool data buffer |
 | Sub-agent fails randomly | Transient platform errors | Retry 5x with exponential backoff |
 | Eval shows "Failed" | No-data (not broken) | Generate traffic, next run picks it up |
+| Teams `@mention` types but never replies (private Foundry) | Inbound chain missing OR reply FQDNs blocked | Stand up reverse proxy per [inbound-firewall.md](../foundry-teams-workiq/inbound-firewall.md); confirm `smba.trafficmanager.net` + `login.botframework.com` allow-listed |
 
 ## Deployment Failures
 
@@ -52,3 +53,12 @@ description: 25 verified failure modes with symptom-to-fix lookup for Foundry ho
 - **F-17 Stream closes silently**: LLM serializing 20KB+ as tool argument. Use data buffer.
 - **F-18 Intermittent 408/refused**: Retry 5x with 2s/4s/8s/8s backoff. All transient.
 - **F-19 50KB+ server_error**: Truncate to 30 records before passing downstream.
+
+## Publish / Channel Failures
+
+- **F-20 Teams `@mention` succeeds, no reply** (silent publish, private Foundry):
+  - **Symptom**: Bot installed in Teams, `@mention` shows typing indicator, reply never lands. No error in App Insights, no entry in Foundry trace, no 4xx anywhere obvious.
+  - **Root cause (inbound leg)**: Foundry account has `publicNetworkAccess=Disabled` (or BYO VNet) and the Bot Service messaging endpoint points directly at the Foundry FQDN. Bot Framework Channel Adapter calls land on the public Microsoft backbone from the Teams service tag — they cannot reach a private endpoint. Foundry never sees the request.
+  - **Root cause (outbound leg)**: Inbound chain is fine, agent processes the activity, but its egress firewall blocks `smba.trafficmanager.net` (the reply queue), so the reply is silently dropped.
+  - **Fix**: Front the private agent with a customer-owned reverse proxy that validates the Bot Framework JWT and forwards to the Foundry PE. Paste-ready APIM v2 + VNet integration scaffold + decision matrix in [foundry-teams-workiq/inbound-firewall.md](../foundry-teams-workiq/inbound-firewall.md). Verify with `probe-inbound-chain.sh <agent_path> <custom_domain>` (3 probes; non-zero exit on any deviation).
+  - **Allowlist `smba.trafficmanager.net` + `login.botframework.com`** on the agent's egress firewall before declaring health — see [foundry-prod-readiness/networking.md § Firewall allowlist](../foundry-prod-readiness/networking.md#firewall-allowlist-byo-vnet--azure-firewall).

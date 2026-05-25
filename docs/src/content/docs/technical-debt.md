@@ -33,6 +33,7 @@ The on-disk source of truth is [`TECHNICAL_DEBT.md`](https://github.com/sathik11
 | TD-10 | v0.20.0 | Network detection deep walkers (NSG / Azure Firewall / SEP) behind `--deep` + BYO-VNet Bicep scaffold + troubleshooter runbook |
 | TD-11 | v0.11.0 | `agent-status.json` durable state |
 | TD-12 | v0.17.0 | `/audit-drift` prompt |
+| TD-23 | v0.22.0 | Inbound firewall coverage for Teams / M365 Copilot → private Foundry agent — `foundry-teams-workiq/inbound-firewall.md` + APIM v2 Bicep + render-apim-policy.sh + probe-inbound-chain.sh + additive `publish.inbound_chain` schema block |
 
 ## Pattern
 

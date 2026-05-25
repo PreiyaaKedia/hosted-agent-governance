@@ -4,7 +4,7 @@ Tracked gaps and trade-offs in the foundry-agent-skillpack APM package. Each ent
 
 > **Rename history:**
 > - **v0.18.0 (May 2026):** package renamed from `foundry-agent-engineering` → `foundry-agent-harness`.
-> - **v0.19.0 (May 2026):** package renamed from `foundry-agent-harness` → `foundry-agent-skillpack`. `aliases: [foundry-agent-harness]` ships in v0.19.x and stays through v0.20.0 (TD-2 + TD-10 close-out release); slated to drop in v0.20.x / v0.21.0. See [TD-19](#td-19--package-rename-foundry-agent-harness--foundry-agent-skillpack).
+> - **v0.19.0 (May 2026):** package renamed from `foundry-agent-harness` → `foundry-agent-skillpack`. `aliases: [foundry-agent-harness]` ships from v0.19.x through v0.22.0; slated to drop in v0.23. See [TD-19](#td-19--package-rename-foundry-agent-harness--foundry-agent-skillpack).
 >
 > Prior TD entries reference older names in commit history; the package contents are continuous. See [`ROADMAP.md`](../ROADMAP.md) for sequencing.
 
@@ -300,4 +300,32 @@ What it deliberately doesn't do:
 
 The GitHub repo was also renamed from `Foundry-Hosted-Agent-Skill` to `foundry-agent-skillpack` in v0.20.0. GitHub auto-redirects old URLs, so existing clone URLs, raw-file links, and PR/issue history continue to work.
 
-**Close-out:** Remove the `aliases:` line from `foundry-agent-skillpack/apm.yml` in a follow-up release (slated for v0.20.x or v0.21.0; deferred past v0.20.0 so the alias survives the TD-2 + TD-10 close-out release). Bump major-or-minor per usual policy. Add a final-warning note to the release notes pointing here.
+**Close-out:** Remove the `aliases:` line from `foundry-agent-skillpack/apm.yml` in v0.23 (deferred past v0.22.0 so the alias survives the TD-23 close-out release). Bump major-or-minor per usual policy. Add a final-warning note to the release notes pointing here.
+
+## ~~TD-23 — Inbound firewall coverage for Teams / M365 Copilot → private Foundry agent~~ **(CLOSED in v0.22.0)**
+
+**Status (v0.22.0):** Closed. The published-bot silent-fail mode (typing indicator → no reply) on private Foundry accounts is now covered end-to-end by:
+
+- [foundry-teams-workiq/inbound-firewall.md](.apm/skills/foundry-teams-workiq/inbound-firewall.md) — 8-section runbook covering the architecture, decision matrix across APIM v2 / YARP / AppGW+APIM, paste-ready `<validate-jwt>` policy with verbatim `login.botframework.com` OIDC config, prereqs checklist (Key Vault-backed cert because v2 tiers don't support free managed cert, plus the Microsoft-suspended-through-2026-06-30 status), firewall worksheet, 3-probe verification, 6-row failure-mode table, anti-patterns.
+- [foundry-teams-workiq/scripts/templates/apim-v2-vnet-integrated.bicep](.apm/skills/foundry-teams-workiq/scripts/templates/apim-v2-vnet-integrated.bicep) — paste-ready Bicep scaffold for APIM StandardV2 + outbound VNet integration + custom domain (KV-backed cert) + the API/operation/policy/product wiring. `@allowed` constrains SKU to `StandardV2` / `PremiumV2` (BasicV2 explicitly NOT supported for VNet integration per MS Learn). Subnet delegation `Microsoft.Web/serverFarms`. Outputs include the messaging endpoint URL the operator pastes into Bot Service.
+- [foundry-teams-workiq/scripts/render-apim-policy.sh](.apm/skills/foundry-teams-workiq/scripts/render-apim-policy.sh) — emits the canonical inbound policy XML for non-Bicep deploys; `--inline` mode substitutes APIM named-value placeholders with concrete values from `agent-status.json` + `agent-capabilities.yaml`. Policy XML is byte-identical to the Bicep `<policies>` block and the canonical block in `inbound-firewall.md` (three sources, one truth).
+- [foundry-teams-workiq/scripts/probe-inbound-chain.sh](.apm/skills/foundry-teams-workiq/scripts/probe-inbound-chain.sh) — 3-probe verifier (TLS smoke / missing-auth 401 / synthetic-invalid-JWT 401). On full pass with `--stamp`, writes `publish.inbound_chain` into `agent-status.json` (custom FQDN, backend URL, probe timestamp, verdict).
+- Additive `publish.inbound_chain` block in [agent-status-schema.md](.apm/skills/foundry-deploy/agent-status-schema.md#publish--written-by-publish-teams-and-configure-rbac---post-publish-td-2) v1.2 (no `schema_version` bump — additive only; `agent_status.py` `ALLOWED_SECTIONS` already contains `"publish"`).
+- New Step 0a in [`/publish-teams`](.apm/prompts/publish-teams.prompt.md) branches on `network.class == "byo_vnet"` OR Foundry `publicNetworkAccess == "Disabled"` and prints the inbound-firewall.md handoff banner before preflight. The `BYO_VNET_PUBLIC_BOT_MISMATCH` gate in `preflight-publish.sh` now has a documented exception path: stand up the inbound chain → override with rationale.
+- Cross-skill callouts: [foundry-prod-readiness/networking.md § Inbound](.apm/skills/foundry-prod-readiness/networking.md#inbound--teams--m365-copilot--private-foundry-agent) explains why `Bot Service "Public Access disabled"` only blocks Direct Line (not the Channel Adapter that delivers Teams messages); the firewall allowlist table gains `smba.trafficmanager.net` + `login.botframework.com` for the outbound reply path. [foundry-prod-readiness/network-troubleshooter.md § Symptom triage](.apm/skills/foundry-prod-readiness/network-troubleshooter.md#symptom-triage) routes the silent-typing symptom to inbound-firewall.md. [foundry-failure-modes/SKILL.md F-20](.apm/skills/foundry-failure-modes/SKILL.md#publish--channel-failures) documents the inbound + outbound legs of the silent failure.
+
+**Original gap:** Foundry accounts with `publicNetworkAccess=Disabled` (BYO VNet or managed VNet "Allow only approved") publish cleanly to Teams via `/publish-teams`. The Bot Service messaging endpoint accepts a URL but does not validate it can be reached from the Bot Framework Channel Adapter's public-backbone IPs (Teams service tag `52.112.0.0/14`, `52.122.0.0/15`). The Channel Adapter then drops activities silently when it cannot reach the registered endpoint. Operators saw: `@mention` succeeded, typing indicator appeared, reply never came; no error in Foundry traces, no entry in App Insights, no 4xx anywhere obvious. The publish itself stayed green because Bot Service's "Test in Web Chat" hits Direct Line (a separate REST path that was never blocked) — a textbook silent-fail mode.
+
+**Why now:** Two community write-ups raised the visibility (Matt Felton on the silent-publish-success symptom; Graeme Foster on the outbound reply FQDN allowlisting requirement under managed VNet "Allow only approved"). The fix surface is small (one doc + one Bicep + two scripts + 4 callouts) and the closure is hard-mechanical (probe script returns non-zero on any of the three failures), so the gap was promoted from "open in roadmap" to v0.22.0 close-out.
+
+**Close-out completed:**
+- ✅ `inbound-firewall.md` shipped (~280 lines, 8 sections)
+- ✅ `apim-v2-vnet-integrated.bicep` shipped (StandardV2 default, PremiumV2 allowed; Key Vault cert path)
+- ✅ `render-apim-policy.sh` shipped (placeholder mode + `--inline` substitution)
+- ✅ `probe-inbound-chain.sh` shipped (3 probes + optional `--stamp` writes to agent-status)
+- ✅ `agent-status-schema.md` v1.2 additive `publish.inbound_chain` (no schema_version bump)
+- ✅ `/publish-teams` Step 0a inbound-chain branch
+- ✅ `networking.md` Bot Service asymmetry callout + reply-path allowlist entries
+- ✅ `network-troubleshooter.md` symptom triage entry
+- ✅ `foundry-failure-modes/SKILL.md` F-20 + quick-triage row
+

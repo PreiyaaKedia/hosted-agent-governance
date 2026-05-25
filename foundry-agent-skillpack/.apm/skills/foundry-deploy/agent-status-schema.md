@@ -211,6 +211,13 @@ The publish block records the runtime-identity flip that occurs when a Foundry a
     "byo_vnet_public_bot_mismatch": false,                   // true blocks publish unless explicitly overridden
     "evals_continuous_rule_id":     "rule-prd-001",          // gate: must be present
     "purview_enabled":              true                     // gate: must be true
+  },
+  "inbound_chain": {                                         // additive (v1.2 / 0.22.0); written by foundry-teams-workiq/scripts/probe-inbound-chain.sh --stamp
+    "custom_fqdn":                  "bot.contoso.com",       // The APIM custom domain the Bot Service messaging endpoint points at
+    "apim_resource_id":             "/subscriptions/…/Microsoft.ApiManagement/service/apim-bots",  // optional
+    "backend_url":                  "https://acct.services.ai.azure.com/api/projects/proj/agents/feedback-harvester/endpoint/protocols/activityprotocol",
+    "probe_at":                     "2026-06-19T09:11:02Z",
+    "probe_verdict":                "pass"                   // pass | fail (re-stamped on each successful probe run)
   }
 }
 ```
@@ -279,3 +286,4 @@ When `schema_version` increments:
 
 - **v1** (2026-05-14, package 0.11.0): initial schema with `identities`, `deploy`, `preflight`, `network`, `rbac`, `evals`, `verify`, `drift`.
 - **v1.1** (2026-06-18, package 0.20.0): additive `publish` section (TD-2). No breaking changes; consumers that don't read `publish` are unaffected.
+- **v1.2** (2026-06-19, package 0.22.0): additive `publish.inbound_chain` block (TD-23). Written by `foundry-teams-workiq/scripts/probe-inbound-chain.sh --stamp` once TLS + missing-auth-401 + invalid-JWT-401 probes all pass against the customer reverse proxy fronting the private Foundry agent. No `schema_version` bump (additive only).

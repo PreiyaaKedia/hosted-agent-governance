@@ -16,6 +16,7 @@ Step-by-step runbook for converting unknown network failures (silent timeouts, m
 | Agent returns `404` or `BadRequest` on the first tool call only | Per-source PE missing or not Approved — go to [Step 3](#step-3--per-source-private-endpoint-state) |
 | Agent works for some sources, times out for one | Private DNS zone not linked OR resolves to the public IP — go to [Step 4](#step-4--dns-resolution-from-inside-the-vnet) |
 | Agent works in portal, fails when invoked from Teams | Bot Service endpoint mismatch (NOT this runbook — see [foundry-teams-workiq § Channel publishing](../foundry-teams-workiq/SKILL.md)) |
+| Teams `@mention` shows typing indicator → never replies (private Foundry) | Inbound chain misconfigured (no JWT-validating reverse proxy in front of the private agent) OR outbound reply FQDNs (`smba.trafficmanager.net`, `login.botframework.com`) blocked at egress firewall — → [foundry-teams-workiq/inbound-firewall.md](../foundry-teams-workiq/inbound-firewall.md) |
 | `nslookup` returns a public IP from inside the VNet | DNS zone linkage gap — go to [Step 4](#step-4--dns-resolution-from-inside-the-vnet) |
 | Random 5xx with no pattern | NOT a network issue. Check `/troubleshoot symptom="random 5xx"` or [foundry-failure-modes](../foundry-failure-modes/SKILL.md) |
 

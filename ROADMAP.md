@@ -1,12 +1,23 @@
 # Roadmap
 
-The skillpack is at **v0.21.0** (May 2026). What's next is sequenced by *value of unblocking* × *real cost of building*. Open follow-ons are tracked as `TD-N` entries in [foundry-agent-skillpack/TECHNICAL_DEBT.md](foundry-agent-skillpack/TECHNICAL_DEBT.md).
+The skillpack is at **v0.22.0** (May 2026). What's next is sequenced by *value of unblocking* × *real cost of building*. Open follow-ons are tracked as `TD-N` entries in [foundry-agent-skillpack/TECHNICAL_DEBT.md](foundry-agent-skillpack/TECHNICAL_DEBT.md).
 
 For the rendered version with cross-links, see the [docs site Roadmap page](docs/src/content/docs/roadmap.md).
 
 ---
 
 ## Shipped recently
+
+### v0.22.0 (May 2026) — TD-23 close-out (inbound firewall for private Foundry agents on Teams)
+
+- [x] **TD-23 — inbound firewall coverage** for the silent-publish-success failure mode on private Foundry accounts. Bot Framework Channel Adapter calls land from the public Microsoft backbone (Teams service tag `52.112.0.0/14`, `52.122.0.0/15`) and cannot reach a `publicNetworkAccess=Disabled` Foundry endpoint — `@mention` succeeds, typing indicator fires, reply never lands. Closure ships the runbook + paste-ready scaffold + verification.
+- [x] **`foundry-teams-workiq/inbound-firewall.md`** — 8-section runbook: architecture, APIM v2 / YARP / AppGW+APIM decision matrix, paste-ready `<validate-jwt>` policy, prereqs (Key Vault-backed cert because v2 tiers don't support free managed cert + Microsoft-suspended-through-2026-06-30 notice), firewall worksheet, 3-probe verification, 6-row failure-mode table, anti-patterns.
+- [x] **`apim-v2-vnet-integrated.bicep`** — paste-ready APIM StandardV2 + outbound VNet integration + custom domain (KV cert) + API/operation/policy/product wiring. `@allowed` SKU constrained to `StandardV2` / `PremiumV2`; subnet delegation `Microsoft.Web/serverFarms`.
+- [x] **`render-apim-policy.sh`** — emits canonical policy XML for non-Bicep deploys; `--inline` substitutes APIM named-value placeholders with concrete values from `agent-status.json`. Byte-identical to the Bicep policy block.
+- [x] **`probe-inbound-chain.sh`** — 3-probe verifier (TLS / missing-auth 401 / synthetic-invalid-JWT 401); `--stamp` writes `publish.inbound_chain` into `agent-status.json` on full pass.
+- [x] **`agent-status.json` schema v1.2** — additive `publish.inbound_chain` block; no `schema_version` bump.
+- [x] **`/publish-teams` Step 0a** — branches on private-Foundry detection (`network.class == "byo_vnet"` OR `publicNetworkAccess == "Disabled"`) and prints the inbound-firewall handoff banner before preflight.
+- [x] **Cross-skill callouts:** `foundry-prod-readiness/networking.md` Bot Service asymmetry callout + reply-FQDN allowlist (`smba.trafficmanager.net`, `login.botframework.com`); `network-troubleshooter.md` symptom triage entry; `foundry-failure-modes/SKILL.md` F-20.
 
 ### v0.21.0 (May 2026) — Operator mode + discovery scripts
 
@@ -37,7 +48,7 @@ For the rendered version with cross-links, see the [docs site Roadmap page](docs
 
 ---
 
-## Next minor (v0.22)
+## Next minor (v0.23)
 
 | Item | Source | Notes |
 |---|---|---|

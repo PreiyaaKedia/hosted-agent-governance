@@ -3,9 +3,20 @@ title: Roadmap
 description: What's done, what's next, and what's deferred — with the reasoning for each.
 ---
 
-The skillpack is at **v0.21.0** (May 2026). What's next is sequenced by *value of unblocking* + *real cost of building*. Open follow-ons are tracked in [TECHNICAL_DEBT.md](/technical-debt/) on disk.
+The skillpack is at **v0.22.0** (May 2026). What's next is sequenced by *value of unblocking* + *real cost of building*. Open follow-ons are tracked in [TECHNICAL_DEBT.md](/technical-debt/) on disk.
 
 ## Shipped recently
+
+### v0.22.0 — TD-23 close-out (inbound firewall for private Foundry agents on Teams)
+
+- ✅ **TD-23 — inbound firewall coverage** for the published-bot silent-fail mode (typing indicator → no reply) on `publicNetworkAccess=Disabled` Foundry accounts. Closes the gap where Bot Framework Channel Adapter calls land from the public Microsoft backbone (Teams service tag `52.112.0.0/14`, `52.122.0.0/15`) and cannot reach a private Foundry endpoint.
+- ✅ **`foundry-teams-workiq/inbound-firewall.md`** — 8-section runbook: architecture, APIM v2 / YARP / AppGW+APIM decision matrix, paste-ready `<validate-jwt>` policy with `login.botframework.com` OIDC config, prereqs checklist (Key Vault-backed cert because v2 tiers don't support free managed cert, plus Microsoft-suspended-through-2026-06-30 notice), firewall worksheet, 3-probe verification, 6-row failure-mode table, anti-patterns.
+- ✅ **`apim-v2-vnet-integrated.bicep`** — paste-ready scaffold for APIM StandardV2 + outbound VNet integration + custom domain (KV cert) + API/operation/policy/product wiring. `@allowed` constrains SKU to `StandardV2` / `PremiumV2` (BasicV2 NOT supported for VNet integration). Subnet delegation `Microsoft.Web/serverFarms`.
+- ✅ **`render-apim-policy.sh`** — emits canonical policy XML for non-Bicep deploys; `--inline` substitutes APIM named-value placeholders with concrete values from `agent-status.json`. Byte-identical to the Bicep `<policies>` block (three sources, one truth).
+- ✅ **`probe-inbound-chain.sh`** — 3-probe verifier (TLS / missing-auth 401 / synthetic-invalid-JWT 401). `--stamp` writes `publish.inbound_chain` into `agent-status.json` on full pass.
+- ✅ **`agent-status.json` schema v1.2** — additive `publish.inbound_chain` block. No `schema_version` bump.
+- ✅ **`/publish-teams` Step 0a** — branches on `network.class == "byo_vnet"` OR `publicNetworkAccess == "Disabled"`; prints inbound-firewall handoff banner before preflight.
+- ✅ **Cross-skill callouts:** `networking.md` Bot Service asymmetry callout + reply-FQDN allowlist (`smba.trafficmanager.net`, `login.botframework.com`); `network-troubleshooter.md` symptom triage entry; `foundry-failure-modes/SKILL.md` F-20.
 
 ### v0.21.0 — Operator mode + discovery scripts
 
@@ -24,7 +35,7 @@ The skillpack is at **v0.21.0** (May 2026). What's next is sequenced by *value o
 
 ### v0.19.0
 
-- ✅ Package renamed from `foundry-agent-harness` → `foundry-agent-skillpack` (`aliases: [foundry-agent-harness]` ships through v0.21.0 — retirement deferred to v0.22.0 per TD-19).
+- ✅ Package renamed from `foundry-agent-harness` → `foundry-agent-skillpack` (`aliases: [foundry-agent-harness]` ships through v0.22.0 — retirement targeted for v0.23 per TD-19).
 - ✅ Astro Starlight documentation site (this site).
 - ✅ Azure Static Web Apps deployment workflow.
 - ✅ Docs drift checker (`docs/scripts/check-drift.mjs`).
@@ -34,7 +45,7 @@ The skillpack is at **v0.21.0** (May 2026). What's next is sequenced by *value o
 - ✅ Rename `foundry-agent-engineering` → `foundry-agent-harness` (superseded in v0.19.0).
 - ✅ ROADMAP at repo root + on this site.
 
-## Next minor (v0.22)
+## Next minor (v0.23)
 
 | Item | Source | Status |
 | --- | --- | --- |

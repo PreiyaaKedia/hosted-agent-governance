@@ -14,9 +14,13 @@ Surfacing a Foundry agent inside Microsoft Teams (and tracking it in Agent 365 /
 | Topic | Read |
 |---|---|
 | **Full publish flow + identity-flip handling (new agent model)** | [publish-flow.md](publish-flow.md) |
+| **Inbound firewall for private Foundry → Teams** (APIM v2 + JWT validation + paste-ready Bicep) | [inbound-firewall.md](inbound-firewall.md) |
 | **Publish prompt** | [`/publish-teams`](../../prompts/publish-teams.prompt.md) |
 | **Publish preflight script** (BotService RP + gates + secret scan) | [scripts/preflight-publish.sh](scripts/preflight-publish.sh) |
 | **Post-publish RBAC re-fan wrapper** | [scripts/refan-rbac-post-publish.sh](scripts/refan-rbac-post-publish.sh) |
+| **APIM v2 + VNet integration Bicep** (private-Foundry inbound) | [scripts/templates/apim-v2-vnet-integrated.bicep](scripts/templates/apim-v2-vnet-integrated.bicep) |
+| **Render the APIM inbound `<validate-jwt>` policy** | [scripts/render-apim-policy.sh](scripts/render-apim-policy.sh) |
+| **Probe the inbound chain end-to-end** (TLS + 401 + invalid-JWT) | [scripts/probe-inbound-chain.sh](scripts/probe-inbound-chain.sh) |
 | Consume Teams data as an MCP tool (WorkIQ Teams MCP) | this file, § Wiring |
 | Legacy `teamsapp` packaging path (agents with `identity == null`) | this file, § Channel publishing |
 

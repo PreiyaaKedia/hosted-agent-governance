@@ -1,5 +1,15 @@
 name: foundry-agent-skillpack
-version: 0.21.0
+version: 0.22.0
+# v0.22.0:
+#   - Closes TD-23: inbound firewall coverage for Teams / M365 Copilot → private
+#     Foundry agent. Ships foundry-teams-workiq/inbound-firewall.md +
+#     apim-v2-vnet-integrated.bicep + render-apim-policy.sh + probe-inbound-chain.sh.
+#   - Additive `publish.inbound_chain` block in agent-status schema v1.2 (no
+#     schema_version bump; ALLOWED_SECTIONS unchanged).
+#   - /publish-teams Step 0a branch routes private-Foundry publishes through the
+#     inbound-firewall runbook before preflight.
+#   - Cross-skill callouts: networking.md Bot Service asymmetry + reply-path
+#     allowlist; network-troubleshooter.md symptom triage; failure-modes F-20.
 # v0.21.0:
 #   - Operator mode: try-first pattern replaces persona-gated runbook-only behavior.
 #     New scripts: try-or-runbook.sh, ensure-provider-registration.sh,

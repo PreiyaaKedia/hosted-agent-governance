@@ -20,6 +20,48 @@ Use **foundry-teams-workiq** (publish-flow.md), **foundry-identity** (post-publi
 
 If `${input:m365_admin_runbook_only} == "true"`: jump directly to **Step 7**.
 
+## Step 0a — Inbound chain branch (private Foundry)
+
+Before preflight, check whether the agent runs in a private-network configuration. If so, the published Bot Service messaging endpoint must point at a customer-owned reverse proxy (APIM v2 / YARP / AppGW+APIM) — **not** at the Foundry FQDN directly, because Bot Framework calls land from the public backbone on IPs that cannot reach a `publicNetworkAccess=Disabled` Foundry account. This is the silent-publish-success failure mode and is the reason [TD-23](../../TECHNICAL_DEBT.md#td-23--inbound-firewall-coverage-for-teams--m365-copilot--private-foundry-agent) exists.
+
+Read `agent-capabilities.yaml` `network.class` and (if `agent-status.json` has been stamped by `/prepare-deploy`) `network.foundry.public_network_access`:
+
+```bash
+NETWORK_CLASS=$(jq -r '.network.class // "public"' \
+  ${input:agent_path}/agent-status.json 2>/dev/null)
+FOUNDRY_PNA=$(jq -r '.network.foundry.public_network_access // "Enabled"' \
+  ${input:agent_path}/agent-status.json 2>/dev/null)
+```
+
+If `NETWORK_CLASS == "byo_vnet"` **or** `FOUNDRY_PNA == "Disabled"`, print this branch banner to the operator and proceed to Step 1 (do NOT skip — the preflight gates still apply):
+
+```
+[!] Private Foundry detected (network.class=$NETWORK_CLASS, publicNetworkAccess=$FOUNDRY_PNA).
+
+    Bot Framework Channel Adapter calls land from public Microsoft backbone
+    on the Teams service tag — they CANNOT reach a private Foundry endpoint
+    directly. You must front the agent with a reverse proxy that validates
+    the Bot Framework JWT and routes outbound to the Foundry PE.
+
+    READ FIRST:
+    .agents/skills/foundry-teams-workiq/inbound-firewall.md
+
+    Shipped paste-ready scaffold (APIM v2 + VNet integration):
+    .agents/skills/foundry-teams-workiq/scripts/templates/apim-v2-vnet-integrated.bicep
+
+    After the inbound chain is deployed, configure the Bot Service messaging
+    endpoint at https://<your-apim-custom-domain>/messages — NOT the Foundry FQDN.
+    Verify with:
+      .agents/skills/foundry-teams-workiq/scripts/probe-inbound-chain.sh \
+        ${input:agent_path} <your-apim-custom-domain> --stamp
+
+    Preflight gate BYO_VNET_PUBLIC_BOT_MISMATCH will still fire in Step 2 —
+    once you've stood up the inbound chain, override the gate with documented
+    exception and re-run.
+```
+
+If the network class is public, skip the banner and proceed.
+
 ## Step 1 — Detect agent object model
 
 ```python

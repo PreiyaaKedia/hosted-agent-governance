@@ -174,7 +174,7 @@ Stamp `publish.m365_admin_approval_runbook_emitted_at` immediately after printin
 | Publish CLI returns 409 with "BotService not registered" | Step 1 `BOT_SERVICE_RP_REGISTERED=false` skipped | `az provider register -n Microsoft.BotService` (subscription-Owner required) |
 | Publish succeeds; Teams `@mention` returns "Sorry, something went wrong" | M365 admin approval (Step 7) not granted yet | Wait or escalate to admin |
 | Capability tools that worked pre-publish now 403 from Teams invocations | Step 6 (`/configure-rbac --post-publish`) not run | Run it; wait 5–15 min for AAD propagation |
-| `BYO_VNET_PUBLIC_BOT_MISMATCH=true` blocks publish | Agent is on BYO-VNet; Bot Service is public-egress only today | Operator-documented exception, or route via private endpoint pattern (advanced; out of scope) |
+| `BYO_VNET_PUBLIC_BOT_MISMATCH=true` blocks publish | Agent is on BYO-VNet; Bot Service is public-egress only today | Stand up the inbound chain per [inbound-firewall.md](inbound-firewall.md) (APIM v2 + VNet integration, paste-ready Bicep), point the Bot Service messaging endpoint at the APIM custom domain, then override the gate with documented exception |
 | Display-name secret-scan finds a match | An accidental token landed in `agent-capabilities.yaml` → `publish.display_name` | Scrub the YAML, re-run `/publish-teams` |
 
 ## Do NOT

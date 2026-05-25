@@ -115,6 +115,15 @@ When using `Allow only approved outbound` with Azure Firewall, allowlist the FQD
 | Agents (always) | `*.identity.azure.net`, `login.microsoftonline.com`, `*.login.microsoftonline.com`, `*.login.microsoft.com` (or AAD service tag) |
 | Evals & traces | `*.blob.core.windows.net`, `settings.sdk.monitor.azure.com` |
 | Finetuning curated samples | `raw.githubusercontent.com` |
+| **Bot reply path** (agent published to Teams / M365 Copilot) | `smba.trafficmanager.net`, `login.botframework.com` — the agent's outbound reply lands here; without these the user sees the typing indicator and no reply |
+
+## Inbound — Teams / M365 Copilot → private Foundry agent
+
+**Bot Service "Public Access" toggle is asymmetric.** Disabling it on `Microsoft.BotService/botServices/<bot>` blocks Direct Line (REST channel) only. It does **not** block the Microsoft.BotService **Channel Adapter** that delivers Teams / M365 Copilot activities — those calls land on the public Microsoft backbone via the Teams service tag (`52.112.0.0/14`, `52.122.0.0/15`) and target the messaging endpoint you registered for the bot. If your agent is on a private Foundry account (managed VNet "Allow only approved", BYO VNet, or `publicNetworkAccess=Disabled`), the Channel Adapter cannot reach the agent directly — publish succeeds silently and `@mentions` go nowhere.
+
+Close the gap with a reverse proxy that takes the public hit, validates the Bot Framework JWT, and forwards to the Foundry PE. Definitive guide (with paste-ready APIM v2 + VNet integration Bicep):
+
+→ [foundry-teams-workiq/inbound-firewall.md](../foundry-teams-workiq/inbound-firewall.md)
 
 ## Cross-skill references
 
