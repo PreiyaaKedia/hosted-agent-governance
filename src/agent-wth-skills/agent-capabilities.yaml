@@ -1,0 +1,39 @@
+# Agent Capabilities Manifest for agent-framework-agent-with-skills-responses
+# Written/edited by hand; read by /prepare-deploy, /configure-rbac, /verify-agent, /setup-evals
+schema_version: 1
+agent_kind: hosted
+
+# ── Operator mode ────────────────────────────────────────────────────────
+operator_mode: true
+
+# ── Deployment target ────────────────────────────────────────────────────
+target:
+  subscription: 8cebb108-a4d5-402b-a0c4-f7556126277f
+  resource_group: rg-azure-ai-agents
+  foundry_account: azure-ai-agents-demo
+  foundry_project: firstProject
+  region: westus
+
+# ── Model ────────────────────────────────────────────────────────────────
+model:
+  deployment_name: gpt-4.1-mini
+  catalog_name: gpt-4.1-mini
+  sku_name: GlobalStandard
+
+# ── Capabilities ─────────────────────────────────────────────────────────
+capabilities:
+
+  # ── Outbound storage writes (consumed by the travel-guide skill) ───────
+  # Each entry results in a per-agent SP role assignment at the declared
+  # scope during /configure-rbac Phase 3.
+  storage:
+    blob:
+      - name: travel-guides-output
+        account: stexternalshareablefiles
+        container: travel-guides
+        # Contributor is required so the script can upload + mint a
+        # user-delegation SAS for the generated PDF.
+        role: Storage Blob Data Contributor
+        # Resource-id scope (container-level keeps blast radius small).
+        resource_id: /subscriptions/8cebb108-a4d5-402b-a0c4-f7556126277f/resourceGroups/rg-azure-ai-agents/providers/Microsoft.Storage/storageAccounts/stexternalshareablefiles/blobServices/default/containers/travel-guides
+        used_by_skill: travel-guide
